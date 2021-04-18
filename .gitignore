@@ -7,7 +7,7 @@ manga
 examples_post
 examples_pre
 examples
-_pycache_
+__pycache__
 test_tesseract.sh
 
 *.*~
