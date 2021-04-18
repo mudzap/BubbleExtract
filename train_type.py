@@ -22,25 +22,21 @@ parser.add_argument('--epochs', help="N. of epochs.", default=10, type=int)
 args = parser.parse_args()
 EPOCHS = args.epochs
 
-###
-# Load dataset
-x_train = []
-y_train = []
 
 CLASSES = 3
 IM_SHAPE = (50, 50, 3)
 
-#Lee archivos y los anade al conjunto de datos
+#Helper function for reading data
 def add_file_to_train_set(x_train, y_train, filename, class_num, verbose = False):
     for file in glob.glob(filename):
         data = cv2.imread(file)
-        data = cv2.resize(data, IM_SHAPE[:2]) #probar con 50, 100
+        data = cv2.resize(data, IM_SHAPE[:2]) #Too much data loss?
         x_train.append(data)
         y_train.append(class_num)
         if verbose:
             print("File: " + file + ", Class: " + str(class_num))
 
-#Ordena datos
+#Builds datasets
 x_train = []
 y_train = []
 add_file_to_train_set(x_train, y_train, "output/train/no-text/*.png", 0)
@@ -59,10 +55,6 @@ add_file_to_train_set(x_test, y_test, "output/test/hor-text/*.png", 2)
 x_test = np.array(x_test)/255
 y_test = np.array(y_test)
 
-print (x_test.shape)
-print (y_test.shape)
-print (x_train.shape)
-print (y_train.shape)
 
 #random_state = 1: Initial Seeding
 x_train, x_validate, y_train, y_validate = train_test_split(
@@ -71,52 +63,46 @@ x_train, x_validate, y_train, y_validate = train_test_split(
     random_state = 1
 )
 
-text_model = Sequential([ #Padding y stride por defecto
-    #preprocessing.RandomRotation(factor=0.1, fill_mode='constant'),
+
+text_model = Sequential([
     preprocessing.RandomZoom(height_factor=0.05, width_factor=0.05, fill_mode='constant'),
     preprocessing.RandomTranslation(height_factor=0.05, width_factor=0.05, fill_mode='constant'),
-    #Caracteristicas: Alta frecuencia tipicamente, no importa tanto el color
-    # Se uso un tamaño de kernel de 7 para permitir la formación de filtros
-    # capaces de indentificar caracteristicas de alta frecuencia del texto
-    #El numero de filtros se dio a través de prueba y error (gracias GPU)
+    # It is expected to get high frequency components when dealing with
+    # text-like characteristsica, to ensure identification of these and
+    # for performance reasons (for now), a single convolutional layer with
+    # a set of kernels of size 7x7 will be utilized.
     Conv2D(filters=32, kernel_size=7, activation='relu', input_shape=IM_SHAPE),
     MaxPooling2D(pool_size=2),
-    # Dropout alto
-    # Se observo previene mejor el overfitting (|val_accuracy - accuracy|)
-    # Se justifica por la calidad de los datos y la cantidad de estso
+    # Typical dropout value
     Dropout(0.5),
     Flatten(),
-    Dense(32, activation='relu'), #Entrada
-    #Se justifica la adición de la capa oculta debido a que no
-    # se ve posible determinal si algo es texto o no meraemente
-    # a través de caracteristicas de frecuencia
-    Dense(24, activation='relu'), #Capa oculta
+    Dense(32, activation='relu'),
+    Dense(24, activation='relu'),
     Dense(CLASSES, activation='softmax')
 ])
 
-#Parametros para el entrenamiento (defecto)
+# Training params
 text_model.compile(
     loss='sparse_categorical_crossentropy',
     optimizer=Adam(lr=0.001),
     metrics=['accuracy']
 )
 
-#Entrenamiento
+# Training
 text_model.fit(
     x_train, 
     y_train,
     batch_size=512,
     epochs=EPOCHS, 
     verbose=1,
-    #Se le dio mas peso a las clases de texto, porque son minoria
-    # e inherentemente se creara un sesgo hacia no clasificar las
-    # cosas como texto, que no es ideal
-    #El enfoque es en identificar bien las burbujas de texto
+    # Since most of the data obtained is not actually text, but
+    # rather 'speech bubbles candidates', classes will be weighted
+    # as to prevent bias
     class_weight= {0:1., 1:2., 2:2.},
-    #Conjunto de validación necesario por conjunto pequeño de datos
     validation_data=(x_validate, y_validate)
 )
 
+# Evaluation
 score = text_model.evaluate(x_test, y_test, verbose=False)
 print(score)
 
@@ -128,7 +114,5 @@ mat = confusion_matrix(y_test, label)
 print(mat)
 
 text_model.save("models/trained_model_" + str(EPOCHS))
-
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+print("Save resulting model to dir: models/trained_model_" + str(EPOCHS))
 print("EOP")
