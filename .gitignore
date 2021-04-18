@@ -9,3 +9,5 @@ examples_pre
 examples
 _pycache_
 test_tesseract.sh
+
+*.*~
