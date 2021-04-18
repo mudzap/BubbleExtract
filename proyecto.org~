@@ -1,0 +1,81 @@
+
+
+#+AUTHOR: Iván Guillermo Peña Flores
+#+TITLE: Documentación proyecto 1
+
+#+LANGUAGE: es
+#+LATEX_CLASS_OPTIONS: [letter, 10pt]
+#+LATEX_HEADER: \usepackage{times}
+#+LATEX_HEADER: \usepackage[spanish]{babel}
+#+LATEX_HEADER: \usepackage{microtype}
+
+
+* Propuesta
+
+Motor OCR para comics japoneses para transcibir estos a un formato estandar.
+
+Existen algunas ventajas:
++ Es posible adquirir una gran cantidad de datos con facilidad
++ Las condiciones son relativamente ideales (para la mayoria de los scans)
+
+Las desventajas serian:
++ El texto no siempre se encuentra en burbujas
++ El estilo varia de artista a artista
++ Onomatopeias son tipicamente completamente diferentes al texto "normal"
++ Muchos casos de estilización, lectura de izquierda a derecha, en estos casos es tipico necesitar realizar ajustes manuales
++ Tesseract ya esta muy completo y es dificil ofrecer una alternativa, sin embargo, como API, puede ofrecer cierta flexibilidad e incluso puede ser entrenado.
+
+** Propuesta 1
+
+Se considero inicialmente el uso de dos redes neuronales secuenciales, una para identificar texto y su orientación, y la segunda, para transcribirlo caracter por caracter, la justificación de esto, es en acelerar el entrenamiento, y posiblemente, el tamaño de las redes.
+Se infieren estas cosas considerando lo siguiente:
+
++ La extracción de caracteristicas 'finas' en un contexto general, implica la necesidad de una mayor cantidad de filtros, y se considera que es posible que sesgue y lleve a la identificación de falsos positivos.
++ Al ser este un caso altamente especializado, el uso de redes convolucionales especializadas no es un problema, sino algo deseable.
+
+** Propuesta 2
+
+Lamentablemente, tesseract es una herramienta muy versatil para el OCR, siendo capaz de todo lo anterior mencionado, sin embargo, todavia prevalecen algunos problemas:
+
++ Uso de ambos texto vertical y horizontal
++ Texto altamente estilizado
+
+En este momento no se sabe como lidiar con el texto altamente estilizado, sin embargo, un factor de gran importancia, que puede facilitar su identificación es que este suele estar limitado a katakana y rara vez a hiragana. Esto reduce considerablemente el numero de clases a las que puede realizarse la clasificación. De ser posible, lo mejor seria trabajarlo con tesseract, sin embargo este parece estar diseñado para fuentes nada mas.
+
+** Propuesta 3
+
+Tesseract no es tan bueno como lo suponia, inlcuso identificar burbujas es una ventaja sobre tesseract puro.
+
+Para la identificación de burbujas de dialogo, se propone un filtro laplaciano, seguido por binarización y dilatación.
+
+Despues de esto, realizar un muestreo distribuido linearmente, y construir una mascarilla de las zonas negras rellenadas, de las cuales, a través de su histograma en la imagen original determinaran la posición, orientiación, y si es texto o no.
+
+la razon por la que se utilizo un filtro laplaciano en vez de otro algoritmo de detección de bordes, es que no se busca detectar bordes, sino establecer regiones claramentet separables, también da la ventaja que si es un escaneo de un volumen sin quitarle las paginas, se elimina l
+
+* Dependencias
+
+Se pueden instalar las dependencias de forma rapida con pip y un package manager:
+
+#+BEGIN_SRC bash:
+pip install tesserocr
+sudo apt install libtesseract* tesseract-ocr-script-jpan*\
+tesseract-ocr-jpn* libleptonica*
+#+END_SRC
+
+El resto de las dependencias (tesseract-ocr, tesseract-ocr-eng...) se instalan automaticamente.
+
+IEEE
+
+Practica
+- Opción 2:
+   Propuestas a mejorar a futuro, si no sirve
+   Que se ha hecho?
+
+  Para pruebas, bajar la maquina virtual (ROS)
+  https://www.cscjournals.org/manuscript/Journals/IJIP/Volume4/Issue6/IJIP-290.pdf
+
+  Observaciones: Muy similar a mi propuesta, no se realiza detección de bordes previa, pero si se utiliza un operador morfologico. Aqui, se utiliza la relación entre la dimensión horizontal y vertical del bloque de texto para determinar si es o no.
+
+  El papel es relativamente viejo, asi que no maneja tecnicas de aprendizaje de maquina, de las cuales nosotros si podemos hacer uso.
+
+  Es posible probar con ambos metodos para la detección de burbujas (que dio buenos resultados en el papel), y luego implementar una red neuronal para detectar las caracteristicas de esta, con un preprocesamiento para asegurar que se mantengan 'text-like characteristics', asi luego hacer uso de un OCR tradicional como tesseract.

@@ -1,0 +1,11 @@
+*.png
+*.jpg
+*.org
+*.tex
+*.pdf
+manga
+examples_post
+examples_pre
+examples
+_pycache_
+test_tesseract.sh
