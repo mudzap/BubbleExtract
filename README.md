@@ -23,6 +23,20 @@ No dataset was available to me, so I extracted it and made it myself with functi
 - argparse (for training)
 - sklearn (for training)
 
+## Example dataset creation
+
+The first step of extractoin is to identify candidates for speech bubbles, for example:
+
+![Example img](./pics/example_page.jpg =400x)
+
+Class: no_text
+![Example_no_text](./pics/example_no_text.png =200x)
+
+Class: vert_text
+![Example_vert_text](./pics/example_no_vert.png =200x)
+
+Class: hor_text
+![Example_hor_text](./pics/example_no_hor.png =200x)
 
 ## CNN Architecture
 
